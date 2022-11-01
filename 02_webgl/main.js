@@ -61,12 +61,13 @@ const vertexData = [
     -.5, -.5, -.5,
 ];
 
-// Generate randomColor for each
+// Generate randomColor for each face
 function randomColor() {
   return [Math.random(), Math.random(), Math.random()]; // [r, g, b]
 }
 
 let colorData = [];
+// 6 faces * 6 vertexes
 for (let face = 0; face < 6; face++) {
   let faceColor = randomColor();
   for (let vertex = 0; vertex < 6; vertex++) {
@@ -86,7 +87,7 @@ gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 // Fill buffer with colorData
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
 
-// Define vertex shader
+// Define & compile vertex shader
 const vertexShader = gl.createShader(gl.VERTEX_SHADER);
 gl.shaderSource(
   vertexShader,
@@ -104,7 +105,7 @@ gl.shaderSource(
 );
 gl.compileShader(vertexShader);
 
-// Define fragment shader
+// Define & compile fragment shader
 const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 gl.shaderSource(
   fragmentShader,
@@ -126,37 +127,41 @@ gl.attachShader(program, fragmentShader);
 // Link program with webGL ctx
 gl.linkProgram(program);
 
+// Fetch & bind position location attribute
 const positionLocation = gl.getAttribLocation(program, `position`);
 gl.enableVertexAttribArray(positionLocation);
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
+// Fetch & bind color attribute
 const colorLocation = gl.getAttribLocation(program, `color`);
 gl.enableVertexAttribArray(colorLocation);
 gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
 
 gl.useProgram(program);
+// Occlusion
 gl.enable(gl.DEPTH_TEST);
 
+// Fetch matrix uniform pointer
 const uniformLocations = {
   matrix: gl.getUniformLocation(program, `matrix`),
 };
 
+// Create & init matrix
 const matrix = mat4.create();
-
 mat4.translate(matrix, matrix, [0.2, 0.5, 0]);
-
 mat4.scale(matrix, matrix, [0.25, 0.25, 0.25]);
 
 // Main render loop
 function animate() {
   requestAnimationFrame(animate);
+  // Vector projection via gl-matrix library
   mat4.rotateX(matrix, matrix, Math.PI / 2 / 70);
   mat4.rotateY(matrix, matrix, Math.PI / 2 / 70);
   mat4.rotateZ(matrix, matrix, Math.PI / 2 / 70);
   gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
-  gl.drawArrays(gl.TRIANGLES, 0, vertexData.length / 3);
+  gl.drawArrays(gl.TRIANGLES, 0, vertexData.length / 3); // mode, first, count
 }
 
 animate();
